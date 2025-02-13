@@ -1,0 +1,84 @@
+---
+- name: Deploy MERN stack app (Client + Server)
+  hosts: web_servers
+  become: yes
+  tasks:
+    - name: Update system packages
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Install Node.js
+      yum:
+        name: nodejs
+        state: present
+
+    - name: Install Git
+      yum:
+        name: git
+        state: present
+
+    # Clone the Client repository (React app)
+    - name: Clone the React client repository
+      git:
+        repo: 'https://github.com/safeer85/sams/client'  # Replace with your React repo URL
+        dest: '/home/ubuntu/client'
+        version: master  # Optional: specify a branch
+
+    # Clone the Server repository (Node.js app)
+    - name: Clone the Node.js server repository
+      git:
+        repo: 'https://github.com/safeer85/sams/server'  # Replace with your Node.js repo URL
+        dest: '/home/ubuntu/server'
+        version: master  # Optional: specify a branch
+
+    # Install dependencies for the React client
+    - name: Install dependencies for React client
+      npm:
+        path: '/home/ubuntu/client'
+        state: present
+
+    # Build the React client (production build)
+    - name: Build the React client
+      command: npm run build
+      args:
+        chdir: '/home/ubuntu/client'
+
+    # Install dependencies for the Node.js server
+    - name: Install dependencies for Node.js server
+      npm:
+        path: '/home/ubuntu/server'
+        state: present
+
+    # Start the Node.js server using PM2
+    - name: Start the Node.js server using PM2
+      command:
+        cmd: pm2 start /home/ubuntu/server/index.js  # Replace with the entry point for your server
+        chdir: '/home/ubuntu/server'
+      become: yes
+
+    # Optionally, save the PM2 process list to be resurrected on restart
+    - name: Save PM2 process list
+      command: pm2 save
+
+    # Set up a reverse proxy (e.g., using Nginx) for serving the React app and Node.js API
+    - name: Install Nginx (optional)
+      yum:
+        name: nginx
+        state: present
+
+    - name: Configure Nginx reverse proxy
+      template:
+        src: nginx_reverse_proxy.j2
+        dest: /etc/nginx/conf.d/mern_stack.conf
+
+    - name: Start Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    # Restart PM2 to ensure everything is running after Nginx setup
+    - name: Restart PM2 processes
+      command: pm2 restart all
+      become: yes

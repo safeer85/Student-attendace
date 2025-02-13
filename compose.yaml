@@ -1,0 +1,17 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: ./client  # Assuming frontend has its own folder with Dockerfile
+    ports:
+      - "3000:3000"  # Exposing frontend on port 3000
+    depends_on:
+      - backend  # Make sure the backend is up before frontend
+
+  backend:
+    build:
+      context: ./server  # Assuming backend has its own folder with Dockerfile
+    ports:
+      - "5000:5000"  # Exposing backend on port 5000
+    environment:
+      - NODE_ENV=production

@@ -1,0 +1,89 @@
+/* Container styles */
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f4;
+    padding: 0 20px;
+  }
+  
+  /* Form styles */
+  .register-form {
+    padding: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #2392c6; /* Light blue background */
+    box-shadow: 0 4px 8px rgba(218, 134, 134, 0.1);
+    width: 100%;
+    max-width: 400px; /* Limit the max width */
+    text-align: center;
+    transition: all 0.3s ease; /* Smooth transition for hover effect */
+  }
+  
+  /* Hover effect on form */
+  .register-form:hover {
+    box-shadow: 0 8px 16px rgba(218, 134, 134, 0.2); /* Darker shadow on hover */
+  }
+  
+  /* Form group styles */
+  .form-group {
+    margin-bottom: 1.5rem; /* Increased margin for better spacing */
+    text-align: left;
+  }
+  
+  /* Label styles */
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff; /* White text for better visibility */
+  }
+  
+  /* Input styles */
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.75rem; /* Increased padding */
+    border: 1px solid #ccc;
+    border-radius: 5px; /* Slightly round corners */
+    background: #f9f9f9;
+    font-size: 1rem;
+    color: #333; /* Dark text for better readability */
+  }
+  
+  /* Button styles */
+  .register-button {
+    width: 100%;
+    padding: 0.75rem; /* Increased padding */
+    background: #081f38;
+    color: #fff;
+    border: none;
+    border-radius: 5px; /* Rounded button corners */
+    cursor: pointer;
+    font-size: 1.1rem; /* Slightly larger text */
+    transition: background 0.3s ease, transform 0.3s ease; /* Smooth transition for background color and scale */
+  }
+  
+  /* Button hover effect */
+  .register-button:hover {
+    background: #0056b3;
+    transform: scale(1.05); /* Slightly enlarge button on hover */
+  }
+  
+  /* Error and success messages */
+  .error-message {
+    color: #e74c3c;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    display: block;
+  }
+  
+  .success-message {
+    color: #27ae60;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    display: block;
+  }
+  

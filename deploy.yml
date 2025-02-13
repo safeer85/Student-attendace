@@ -21,14 +21,14 @@
     # Clone the Client repository (React app)
     - name: Clone the React client repository
       git:
-        repo: 'https://github.com/safeer85/sams/client'  # Replace with your React repo URL
+        repo: 'https://github.com/safeer85/student-attendance/client'  # Replace with your React repo URL
         dest: '/home/ubuntu/client'
         version: master  # Optional: specify a branch
 
     # Clone the Server repository (Node.js app)
     - name: Clone the Node.js server repository
       git:
-        repo: 'https://github.com/safeer85/sams/server'  # Replace with your Node.js repo URL
+        repo: 'https://github.com/safeer85/student-attendance/server'  # Replace with your Node.js repo URL
         dest: '/home/ubuntu/server'
         version: master  # Optional: specify a branch
 

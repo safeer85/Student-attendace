@@ -1,4 +1,3 @@
----
 - name: Deploy MERN stack app (Client + Server)
   hosts: web_servers
   become: yes
@@ -7,6 +6,9 @@
       yum:
         name: "*"
         state: latest
+
+    - name: Enable Amazon Linux Extras for Node.js
+      command: amazon-linux-extras enable nodejs14
 
     - name: Install Node.js
       yum:
@@ -22,47 +24,56 @@
     - name: Clone the React client repository
       git:
         repo: 'https://github.com/safeer85/student-attendance/client'  # Replace with your React repo URL
-        dest: '/home/ubuntu/client'
+        dest: '/home/ec2-user/client'
         version: master  # Optional: specify a branch
 
     # Clone the Server repository (Node.js app)
     - name: Clone the Node.js server repository
       git:
         repo: 'https://github.com/safeer85/student-attendance/server'  # Replace with your Node.js repo URL
-        dest: '/home/ubuntu/server'
+        dest: '/home/ec2-user/server'
         version: master  # Optional: specify a branch
+
+    # Install npm (if not installed)
+    - name: Install npm
+      yum:
+        name: npm
+        state: present
 
     # Install dependencies for the React client
     - name: Install dependencies for React client
-      npm:
-        path: '/home/ubuntu/client'
-        state: present
+      command: npm install
+      args:
+        chdir: '/home/ec2-user/client'
 
     # Build the React client (production build)
     - name: Build the React client
       command: npm run build
       args:
-        chdir: '/home/ubuntu/client'
+        chdir: '/home/ec2-user/client'
 
     # Install dependencies for the Node.js server
     - name: Install dependencies for Node.js server
-      npm:
-        path: '/home/ubuntu/server'
-        state: present
+      command: npm install
+      args:
+        chdir: '/home/ec2-user/server'
+
+    # Install PM2 globally
+    - name: Install PM2 globally
+      command: npm install -g pm2
 
     # Start the Node.js server using PM2
     - name: Start the Node.js server using PM2
       command:
-        cmd: pm2 start /home/ubuntu/server/index.js  # Replace with the entry point for your server
-        chdir: '/home/ubuntu/server'
-      become: yes
+        cmd: pm2 start index.js
+        chdir: '/home/ec2-user/server'
 
-    # Optionally, save the PM2 process list to be resurrected on restart
+    # Save PM2 process list
     - name: Save PM2 process list
       command: pm2 save
 
-    # Set up a reverse proxy (e.g., using Nginx) for serving the React app and Node.js API
-    - name: Install Nginx (optional)
+    # Install Nginx (optional)
+    - name: Install Nginx
       yum:
         name: nginx
         state: present
@@ -81,4 +92,3 @@
     # Restart PM2 to ensure everything is running after Nginx setup
     - name: Restart PM2 processes
       command: pm2 restart all
-      become: yes

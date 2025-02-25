@@ -24,7 +24,7 @@ const RegisterPage = () => {
         subjects: role === 'teacher' ? subjects : undefined,
       };
 
-      const response = await axios.post('http://localhost:5000/api/register', userData);
+      const response = await axios.post('http://13.61.3.43:5000/api/register', userData);
       setSuccessMessage(response.data.message);
       setErrorMessage('');
     } catch (error) {

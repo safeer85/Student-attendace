@@ -1,80 +1,55 @@
-- name: Deploy MERN stack app (Client + Server)
+- name: Deploy MERN stack app using Docker from Docker Hub
   hosts: web_servers
   become: yes
   tasks:
-    - name: Update system packages
+    - name: Update system packages (Amazon Linux 2)
       yum:
         name: "*"
         state: latest
+      when: ansible_distribution == "Amazon" and ansible_distribution_major_version == "2"
 
-    - name: Enable Amazon Linux Extras for Node.js
-      command: amazon-linux-extras enable nodejs14
+    - name: Update system packages (Amazon Linux 2023)
+      dnf:
+        name: "*"
+        state: latest
+      when: ansible_distribution == "Amazon" and ansible_distribution_major_version == "2023"
 
-    - name: Install Node.js
-      yum:
-        name: nodejs
+    # Install Docker
+    - name: Install Docker
+      package:
+        name: docker
         state: present
 
-    - name: Install Git
-      yum:
-        name: git
-        state: present
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-    # Clone the Client repository (React app)
-    - name: Clone the React client repository
-      git:
-        repo: 'https://github.com/safeer85/student-attendance/client'  # Replace with your React repo URL
-        dest: '/home/ec2-user/client'
-        version: master  # Optional: specify a branch
+    - name: Ensure Docker is Installed for Ansible User
+      shell: usermod -aG docker {{ ansible_user }}
 
-    # Clone the Server repository (Node.js app)
-    - name: Clone the Node.js server repository
-      git:
-        repo: 'https://github.com/safeer85/student-attendance/server'  # Replace with your Node.js repo URL
-        dest: '/home/ec2-user/server'
-        version: master  # Optional: specify a branch
+    # Pull Backend Image from Docker Hub
+    - name: Pull Backend Docker image from Docker Hub
+      command: docker pull safeer85/sams-backend:latest
 
-    # Install npm (if not installed)
-    - name: Install npm
-      yum:
-        name: npm
-        state: present
+    # Run Backend Container
+    - name: Run Backend Docker container
+      command: >
+        docker run -d --name backend_container -p 5000:5000 safeer85/sams-backend:latest
 
-    # Install dependencies for the React client
-    - name: Install dependencies for React client
-      command: npm install
-      args:
-        chdir: '/home/ec2-user/client'
+    # Pull Frontend Image from Docker Hub
+    - name: Pull Frontend Docker image from Docker Hub
+      command: docker pull safeer85/sams-frontend:latest
 
-    # Build the React client (production build)
-    - name: Build the React client
-      command: npm run build
-      args:
-        chdir: '/home/ec2-user/client'
+    # Run Frontend Container
+    - name: Run Frontend Docker container
+      command: >
+        docker run -d --name frontend_container -p 3000:3000 --env REACT_APP_API_URL=http://{{ ansible_default_ipv4.address }}:5000 safeer85/sams-frontend:latest
 
-    # Install dependencies for the Node.js server
-    - name: Install dependencies for Node.js server
-      command: npm install
-      args:
-        chdir: '/home/ec2-user/server'
-
-    # Install PM2 globally
-    - name: Install PM2 globally
-      command: npm install -g pm2
-
-    # Start the Node.js server using PM2
-    - name: Start the Node.js server using PM2
-      command:
-        cmd: pm2 start index.js
-        chdir: '/home/ec2-user/server'
-
-    # Save PM2 process list
-    - name: Save PM2 process list
-      command: pm2 save
-
-    # Install Nginx (optional)
+    # Install Nginx (for reverse proxy)
     - name: Install Nginx
-      yum:
+      package:
         name: nginx
         state: present
 
@@ -83,12 +58,9 @@
         src: nginx_reverse_proxy.j2
         dest: /etc/nginx/conf.d/mern_stack.conf
 
-    - name: Start Nginx
+    - name: Restart Nginx to apply changes
       service:
         name: nginx
-        state: started
+        state: restarted
         enabled: yes
 
-    # Restart PM2 to ensure everything is running after Nginx setup
-    - name: Restart PM2 processes
-      command: pm2 restart all

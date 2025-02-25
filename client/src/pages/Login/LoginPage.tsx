@@ -22,7 +22,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
   try {
     // Make the API call
-    const response = await axios.post('http://localhost:5000/api/login', {
+    const response = await axios.post('http://13.61.3.43:5000/api/login', {
       email,
       password,
     });

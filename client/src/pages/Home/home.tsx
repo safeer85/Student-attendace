@@ -91,7 +91,7 @@ export default HomePage;*/
 
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import Navbar from '../../Components/navbar.tsx'; // Import the Navbar component
+//import Navbar from '../../Components/navbar.tsx'; // Import the Navbar component
 import TakeAttendance from '../../Components/TakeAttendance.tsx'; // Import the Take Attendance component
 import ViewAttendance from '../../Components/ViewAttendance.tsx';
 import GenerateReport from '../../Components/GenerateReport.tsx';
@@ -108,7 +108,7 @@ const HomePage: React.FC = () => {
   return (
     <div>
       {/* Navbar at the top */}
-      <Navbar />
+      
 
       {/* Main Content */}
       <div className="container mx-auto mt-6 p-6">

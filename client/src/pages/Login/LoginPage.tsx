@@ -22,7 +22,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
   try {
     // Make the API call
-    const response = await axios.post('http://13.61.3.43:5000/api/login', {
+    const response = await axios.post('http://localhost:5000/api/login', {
       email,
       password,
     });
@@ -60,11 +60,6 @@ const handleLogin = async (e: React.FormEvent) => {
         {/* Instructions text */}
         <p className="login-instructions">
           To access your account, please enter your registered email and password.
-        </p>
-
-        {/* Optional security reminder */}
-        <p className="security-note">
-          For security reasons, make sure to use a strong password. Your password must be at least 6 characters long.
         </p>
 
         <div className="form-group">

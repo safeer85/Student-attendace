@@ -1,0 +1,101 @@
+/* Facebook Dark Theme Styling for Home Page */
+body {
+    background-color: #18191a; /* Dark background similar to Facebook */
+    color: #e4e6eb; /* Light text color */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  
+  .container {
+    background-color: #242526; /* Slightly lighter dark background for container */
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Headings */
+  h1 {
+    color: #e4e6eb; /* Light text for headings */
+    margin-bottom: 15px;
+  }
+  
+  h2, h3 {
+    color: #b0b3b8; /* Slightly muted color for secondary headings */
+  }
+  
+  /* Button and Content Wrapper */
+  .mt-4 {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    gap: 20px; /* Space between buttons and content */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  }
+  
+  /* Buttons - Facebook-style */
+  .mt-4 > button {
+    background-color: #2374e1 !important; /* Facebook blue */
+    color: #ffffff !important;
+    border: none;
+    transition: background-color 0.3s ease;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  
+  /* Button Content Container */
+  .mt-4 > div {
+    flex-grow: 1; /* Allow content to take available space */
+    background-color: #3a3b3c; /* Slightly lighter background for content area */
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 300px; /* Minimum width for content area */
+  }
+  
+  /* Button hover effects */
+  .mt-4 > button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Button active/pressed effect */
+  .mt-4 > button:active {
+    opacity: 0.8;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .mt-4 {
+      flex-direction: column; /* Stack on smaller screens */
+    }
+    
+    .mt-4 > div {
+      width: 100%; /* Full width on small screens */
+      min-width: auto;
+    }
+  }
+  
+  /* Form elements inside content area */
+  .mt-4 > div select,
+  .mt-4 > div input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #4a4b4c;
+    border: 1px solid #5a5b5c;
+    border-radius: 6px;
+    color: #e4e6eb;
+  }
+  
+  /* Submit button in form */
+  .mt-4 > div button {
+    background-color: #2374e1 !important;
+    color: #ffffff !important;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+  }
+  
+  .mt-4 > div button:hover {
+    opacity: 0.9;
+  }

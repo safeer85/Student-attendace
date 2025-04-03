@@ -1,91 +1,38 @@
-// import React, { useState } from 'react';
-// import TakeAttendance from '../../Components/TakeAttendance.tsx'; // Import the Take Attendance component
-// import ViewAttendance from '../../Components/ViewAttendance.tsx';
-// import GenerateReport from '../../Components/GenerateReport.tsx';
-// import { useLocation } from 'react-router-dom'; // Import the View Attendance component
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import './navbar.css'; // Create this CSS file for styling
 
-// const HomePage = () => {
-//   const [activeComponent, setActiveComponent] = useState<string | null>(null);
+interface NavbarProps {
+  userName: string;
+  userRole: string;
+}
 
-//   const handleButtonClick = (component: string) => {
-//     setActiveComponent(activeComponent === component ? null : component);
-//   };
+const Navbar: React.FC<NavbarProps> = ({ userName, userRole }) => {
+  const navigate = useNavigate();
 
-//   const location = useLocation();
-//   const user = location.state?.user;
+  const handleLogout = () => {
+    // Clear any stored user data
+    localStorage.removeItem('user');
+    // Navigate back to login page
+    navigate('/');
+  };
 
-//   return (
-//     <div>
-//       <h1>Welcome to the Homepage</h1>
-//       <h2>Hello, {user.email}!</h2>
-//       <h3>Role: {user.role}</h3>
+  return (
+    <nav className="navbar">
+      <div className="navbar-brand">
+        <h1>Student Attendance System</h1>
+      </div>
+      <div className="navbar-menu">
+        <div className="user-info">
+          <span className="user-name">{userName}</span>
+          <span className="user-role">({userRole})</span>
+        </div>
+        <button className="logout-button" onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+};
 
-//       {user.role === 'teacher' && (
-//         <div>
-//           <button onClick={() => handleButtonClick('viewAttendance')}>
-//             View Students Attendance Details
-//           </button>
-//           <button onClick={() => handleButtonClick('takeAttendance')}>
-//             Take Attendance
-//           </button>
-//           <button onClick={() => handleButtonClick('generateReport')}>
-//             Generate Report
-//           </button>
-
-//           {activeComponent === 'viewAttendance' && (
-//             <div>
-//               <h4>View Students Attendance Details</h4>
-//               <ViewAttendance />
-//             </div>
-//           )}
-
-//           {activeComponent === 'takeAttendance' && (
-//             <div>
-//               <h4>Take Attendance</h4>
-//               <TakeAttendance />
-//             </div>
-//           )}
-//           {activeComponent === 'generateReport' && (
-//             <div>
-//               <h4>Generate Report</h4>
-//               <GenerateReport />
-//             </div>
-//           )}
-//         </div>
-//       )}
-
-//       {user.role === 'student' && (
-//         <div>
-//           <button onClick={() => handleButtonClick('viewAttendance')}>
-//             View Your Attendance Details
-//           </button>
-
-//           {activeComponent === 'viewAttendance' && (
-//             <div>
-//               <h4>Your Attendance Details</h4>
-//               <ViewAttendance />
-//             </div>
-//           )}
-//         </div>
-//       )}
-
-//       {user.role === 'parent' && (
-//         <div>
-//           <button onClick={() => handleButtonClick('viewAttendance')}>
-//             View Child’s Attendance Details
-//           </button>
-
-//           {activeComponent === 'viewAttendance' && (
-//             <div>
-//               <h4>Child’s Attendance Details</h4>
-//               <ViewAttendance />
-//             </div>
-//           )}
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default HomePage;
-
+export default Navbar;

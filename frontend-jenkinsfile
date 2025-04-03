@@ -88,19 +88,13 @@ pipeline {
 
     post {
         always {
-            node {
-                echo 'Frontend deployment completed (if any)'
-            }
+            echo 'Frontend deployment completed (if any)'
         }
         success {
-            node {
-                echo 'Frontend Build and Deployment Successful!'
-            }
+            echo 'Frontend Build and Deployment Successful!'
         }
         failure {
-            node {
-                echo 'Frontend Build or Deployment Failed!'
-            }
+            echo 'Frontend Build or Deployment Failed!'
         }
     }
 }

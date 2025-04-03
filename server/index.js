@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 
 // Configure CORS to allow requests from your React frontend
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost', 'http://13.60.17.251:3000'],
+    origin: ['http://localhost:3000', 'http://localhost', 'http://13.48.44.167:3000'],
     credentials: true
   }));
 

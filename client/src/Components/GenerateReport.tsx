@@ -45,6 +45,9 @@ interface ReportData {
 }
 
 const GenerateReport: React.FC = () => {
+  // API URL - change this to match your server
+  const API_URL = 'http://13.60.17.251:5000';
+  
   const [reportType, setReportType] = useState<'class' | 'student'>('class');
   const [classes, setClasses] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
@@ -57,13 +60,22 @@ const GenerateReport: React.FC = () => {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [pdfGenerating, setPdfGenerating] = useState<boolean>(false);
 
   // Fetch available classes
   useEffect(() => {
     const fetchClasses = async () => {
       try {
-        const response = await axios.get('http://13.60.17.251:5000/api/classes');
-        setClasses(response.data.classes);
+        console.log('Fetching classes...');
+        const response = await axios.get(`${API_URL}/api/classes`);
+        console.log('Classes response:', response.data);
+        
+        if (response.data && response.data.classes) {
+          setClasses(response.data.classes);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          setError('Failed to fetch classes');
+        }
       } catch (error) {
         console.error('Error fetching classes:', error);
         setError('Failed to fetch classes');
@@ -71,7 +83,7 @@ const GenerateReport: React.FC = () => {
     };
 
     fetchClasses();
-  }, []);
+  }, [API_URL]);
 
   // Fetch students when class is selected
   useEffect(() => {
@@ -80,9 +92,19 @@ const GenerateReport: React.FC = () => {
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`http://13.60.17.251:5000/api/students?class=${selectedClass}`);
-        setStudents(response.data.students);
-        setSelectedStudent(''); // Reset selected student
+        console.log(`Fetching students for class ${selectedClass}...`);
+        const response = await axios.get(`${API_URL}/api/students`, {
+          params: { class: selectedClass }
+        });
+        console.log('Students response:', response.data);
+        
+        if (response.data && response.data.students) {
+          setStudents(response.data.students);
+          setSelectedStudent(''); // Reset selected student
+        } else {
+          console.error('Unexpected response format:', response.data);
+          setError('Failed to fetch students');
+        }
       } catch (error) {
         console.error('Error fetching students:', error);
         setError('Failed to fetch students');
@@ -92,7 +114,7 @@ const GenerateReport: React.FC = () => {
     };
 
     fetchStudents();
-  }, [selectedClass]);
+  }, [selectedClass, API_URL]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -107,7 +129,7 @@ const GenerateReport: React.FC = () => {
     setError('');
     
     try {
-      let url = 'http://13.60.17.251:5000/api/attendance';
+      let url = `${API_URL}/api/attendance`;
       const params: Record<string, string> = {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate
@@ -129,8 +151,11 @@ const GenerateReport: React.FC = () => {
         params.studentId = selectedStudent;
       }
       
+      console.log('Generating report with params:', params);
       const response = await axios.get(url, { params });
-      const records = response.data.records;
+      console.log('Report data response:', response.data);
+      
+      const records = response.data.records || [];
       
       // Calculate statistics
       const recordsCount = records.length;
@@ -170,71 +195,121 @@ const GenerateReport: React.FC = () => {
   const downloadPDF = () => {
     if (!reportData) return;
     
-    const doc = new jsPDF();
+    setPdfGenerating(true);
     
-    // Add title
-    doc.setFontSize(16);
-    doc.text('Attendance Report', 14, 15);
-    
-    // Add report period
-    doc.setFontSize(10);
-    doc.text(`Period: ${dateRange.startDate} to ${dateRange.endDate}`, 14, 22);
-    
-    // Add report type specific details
-    if (reportType === 'class' && reportData.class) {
-      doc.text(`Class: ${reportData.class}`, 14, 29);
+    try {
+      console.log('Generating PDF report...');
+      const doc = new jsPDF();
       
-      // Add summary statistics
-      doc.text('Attendance Summary:', 14, 38);
-      doc.text(`Total Students: ${reportData.records.length > 0 ? [...new Set(reportData.records.map(r => r.studentId))].length : 0}`, 20, 45);
-      doc.text(`Present: ${reportData.stats.present} (${(reportData.stats.present / reportData.stats.total * 100).toFixed(2)}%)`, 20, 52);
-      doc.text(`Absent: ${reportData.stats.absent} (${(reportData.stats.absent / reportData.stats.total * 100).toFixed(2)}%)`, 20, 59);
-      doc.text(`Late: ${reportData.stats.late} (${(reportData.stats.late / reportData.stats.total * 100).toFixed(2)}%)`, 20, 66);
+      // Add title
+      doc.setFontSize(16);
+      doc.text('Attendance Report', 14, 15);
       
-      // Add attendance table
-      const tableData = reportData.records.map(record => [
-        new Date(record.date).toLocaleDateString(),
-        record.studentName,
-        record.status.charAt(0).toUpperCase() + record.status.slice(1)
-      ]);
+      // Add report period
+      doc.setFontSize(10);
+      doc.text(`Period: ${dateRange.startDate} to ${dateRange.endDate}`, 14, 22);
       
-      doc.text('Daily Attendance Records:', 14, 76);
+      // Add report type specific details
+      if (reportType === 'class' && reportData.class) {
+        doc.text(`Class: ${reportData.class}`, 14, 29);
+        
+        // Add summary statistics
+        doc.text('Attendance Summary:', 14, 38);
+        
+        // Get unique students count
+        const uniqueStudentsCount = reportData.records.length > 0 
+          ? [...new Set(reportData.records.map(r => r.studentId))].length 
+          : 0;
+        
+        doc.text(`Total Students: ${uniqueStudentsCount}`, 20, 45);
+        
+        // Calculate percentages safely
+        const presentPercentage = reportData.stats.total > 0 
+          ? (reportData.stats.present / reportData.stats.total * 100).toFixed(2) 
+          : '0.00';
+        
+        const absentPercentage = reportData.stats.total > 0 
+          ? (reportData.stats.absent / reportData.stats.total * 100).toFixed(2) 
+          : '0.00';
+        
+        const latePercentage = reportData.stats.total > 0 
+          ? (reportData.stats.late / reportData.stats.total * 100).toFixed(2) 
+          : '0.00';
+        
+        doc.text(`Present: ${reportData.stats.present} (${presentPercentage}%)`, 20, 52);
+        doc.text(`Absent: ${reportData.stats.absent} (${absentPercentage}%)`, 20, 59);
+        doc.text(`Late: ${reportData.stats.late} (${latePercentage}%)`, 20, 66);
+        
+        // Add attendance table
+        const tableData = reportData.records.map(record => [
+          new Date(record.date).toLocaleDateString(),
+          record.studentName,
+          record.status.charAt(0).toUpperCase() + record.status.slice(1)
+        ]);
+        
+        doc.text('Daily Attendance Records:', 14, 76);
+        
+        doc.autoTable({
+          startY: 80,
+          head: [['Date', 'Student', 'Status']],
+          body: tableData
+        });
+        
+      } else if (reportType === 'student' && reportData.student) {
+        doc.text(`Student: ${reportData.student.nameWithInitial}`, 14, 29);
+        doc.text(`Class: ${reportData.student.class}`, 14, 36);
+        
+        // Add summary statistics
+        doc.text('Attendance Summary:', 14, 45);
+        doc.text(`Total Days: ${reportData.stats.total}`, 20, 52);
+        
+        // Calculate percentages safely
+        const presentPercentage = reportData.stats.total > 0 
+          ? (reportData.stats.present / reportData.stats.total * 100).toFixed(2) 
+          : '0.00';
+        
+        const absentPercentage = reportData.stats.total > 0 
+          ? (reportData.stats.absent / reportData.stats.total * 100).toFixed(2) 
+          : '0.00';
+        
+        const latePercentage = reportData.stats.total > 0 
+          ? (reportData.stats.late / reportData.stats.total * 100).toFixed(2) 
+          : '0.00';
+        
+        doc.text(`Present: ${reportData.stats.present} (${presentPercentage}%)`, 20, 59);
+        doc.text(`Absent: ${reportData.stats.absent} (${absentPercentage}%)`, 20, 66);
+        doc.text(`Late: ${reportData.stats.late} (${latePercentage}%)`, 20, 73);
+        doc.text(`Attendance Rate: ${reportData.stats.percentage.toFixed(2)}%`, 20, 80);
+        
+        // Add attendance table
+        const tableData = reportData.records.map(record => [
+          new Date(record.date).toLocaleDateString(),
+          record.status.charAt(0).toUpperCase() + record.status.slice(1)
+        ]);
+        
+        doc.text('Daily Attendance Records:', 14, 90);
+        
+        doc.autoTable({
+          startY: 95,
+          head: [['Date', 'Status']],
+          body: tableData
+        });
+      }
       
-      doc.autoTable({
-        startY: 80,
-        head: [['Date', 'Student', 'Status']],
-        body: tableData
-      });
+      // Generate filename
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `attendance_report_${reportType === 'class' ? selectedClass : 'student'}_${timestamp}.pdf`;
       
-    } else if (reportType === 'student' && reportData.student) {
-      doc.text(`Student: ${reportData.student.nameWithInitial}`, 14, 29);
-      doc.text(`Class: ${reportData.student.class}`, 14, 36);
+      // Save PDF
+      console.log(`Saving PDF as ${filename}`);
+      doc.save(filename);
       
-      // Add summary statistics
-      doc.text('Attendance Summary:', 14, 45);
-      doc.text(`Total Days: ${reportData.stats.total}`, 20, 52);
-      doc.text(`Present: ${reportData.stats.present} (${(reportData.stats.present / reportData.stats.total * 100).toFixed(2)}%)`, 20, 59);
-      doc.text(`Absent: ${reportData.stats.absent} (${(reportData.stats.absent / reportData.stats.total * 100).toFixed(2)}%)`, 20, 66);
-      doc.text(`Late: ${reportData.stats.late} (${(reportData.stats.late / reportData.stats.total * 100).toFixed(2)}%)`, 20, 73);
-      doc.text(`Attendance Rate: ${reportData.stats.percentage.toFixed(2)}%`, 20, 80);
-      
-      // Add attendance table
-      const tableData = reportData.records.map(record => [
-        new Date(record.date).toLocaleDateString(),
-        record.status.charAt(0).toUpperCase() + record.status.slice(1)
-      ]);
-      
-      doc.text('Daily Attendance Records:', 14, 90);
-      
-      doc.autoTable({
-        startY: 95,
-        head: [['Date', 'Status']],
-        body: tableData
-      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setError('Failed to generate PDF');
+    } finally {
+      setPdfGenerating(false);
     }
-    
-    // Save PDF
-    doc.save(`attendance_report_${reportType === 'class' ? selectedClass : 'student'}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
@@ -368,8 +443,9 @@ const GenerateReport: React.FC = () => {
             <button 
               className="download-button"
               onClick={downloadPDF}
+              disabled={pdfGenerating}
             >
-              Download PDF
+              {pdfGenerating ? 'Generating PDF...' : 'Download PDF'}
             </button>
           </div>
           

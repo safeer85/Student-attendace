@@ -23,7 +23,7 @@ const HomePage: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto mt-6 p-6">
-        <h1 className="text-2xl font-bold">Welcome  Attendance System </h1>
+        <h1 className="text-2xl font-bold">Welcome to the Attendance System </h1>
         <h2 className="text-lg">Hello! {user?.nameWithInitial}</h2>
         <h3 className="text-md font-semibold">Role: {user?.role}</h3>
 

@@ -48,7 +48,7 @@ mongoose.connect(MONGO_URI, {
 .catch((err) => console.error('MongoDB Connection Error:', err));
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`API endpoints available at http://localhost:${PORT}/api/`);
-});
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`API endpoints available at http://localhost:${PORT}/api/`);
+  });

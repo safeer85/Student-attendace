@@ -92,7 +92,7 @@ const TakeAttendance: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await axios.post('http://13.61.3.43:5000/api/attendance', {
+       await axios.post('http://localhost:5000/api/attendance', {
         date,
         class: selectedClass,
         records: attendanceRecords

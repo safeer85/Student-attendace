@@ -35,7 +35,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/attendance_system';
+const MONGO_URI = process.env.MONGO_URI ;
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,

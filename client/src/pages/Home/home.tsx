@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import './home.css'; // Create this CSS file for styling
 import Navbar from '../../Components/navbar.tsx';
 import TakeAttendance from '../../Components/TakeAttendance.tsx';
-
+import ViewAttendance from '../../Components/ViewAttendance.tsx';
 import GenerateReport from '../../Components/GenerateReport.tsx';
 
 const HomePage: React.FC = () => {
@@ -41,7 +40,9 @@ const HomePage: React.FC = () => {
             </button>
 
             {/* Conditional Rendering */}
-            
+            {activeComponent === 'viewAttendance' && (
+              <ViewAttendance />
+            )}
             {activeComponent === 'takeAttendance' && (
               <TakeAttendance />
             )}
@@ -57,7 +58,9 @@ const HomePage: React.FC = () => {
               View Your Attendance Details
             </button>
 
-            
+            {activeComponent === 'viewAttendance' && (
+              <ViewAttendance />
+            )}
           </div>
         )}
 
@@ -67,7 +70,9 @@ const HomePage: React.FC = () => {
               View Child's Attendance Details
             </button>
 
-           
+            {activeComponent === 'viewAttendance' && (
+              <ViewAttendance />
+            )}
           </div>
         )}
 
@@ -80,6 +85,9 @@ const HomePage: React.FC = () => {
               Generate Reports
             </button>
 
+            {activeComponent === 'viewAttendance' && (
+              <ViewAttendance />
+            )}
             {activeComponent === 'generateReport' && (
               <GenerateReport />
             )}

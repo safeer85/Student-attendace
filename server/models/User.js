@@ -1,47 +1,45 @@
 const mongoose = require('mongoose');
 
-// Define the User Schema
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   nameWithInitial: {
     type: String,
-    required: true,
-    trim: true, // Removes extra spaces
+    required: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    trim: true,
-    lowercase: true, // Ensures email is always stored in lowercase
+    unique: true
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6,
+    required: true
   },
   role: {
     type: String,
-    enum: ['student', 'teacher', 'admin'], // Restricts roles to predefined values
-    default: 'student', // Defaults to 'student'
+    enum: ['admin', 'teacher', 'student', 'parent'],
+    default: 'student'
   },
   class: {
     type: String,
-    required: function () {
-      return this.role === 'student'; // Mandatory only if the role is 'student'
-    },
+    required: function() {
+      return this.role === 'student';
+    }
   },
   subjects: {
-    type: [String], // Array of subjects for teachers
-    required: function () {
-      return this.role === 'teacher'; // Only required for teachers
-    },
-    default: function () {
-      return this.role === 'teacher' ? [] : undefined; // Default to empty array for teachers
-    },
+    type: [String],
+    required: function() {
+      return this.role === 'teacher';
+    }
   },
-}, { timestamps: true }); // Automatically adds createdAt and updatedAt fields
+  childId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: function() {
+      return this.role === 'parent';
+    }
+  }
+}, {
+  timestamps: true
+});
 
-// Export the User Model
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);

@@ -23,14 +23,30 @@ const TakeAttendance: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | ''; text: string }>({ type: '', text: '' });
 
+  // Backend API URL - update this to match your server
+  const API_URL = 'http://13.60.17.251:5000';
+
   // Fetch available classes on component mount
   useEffect(() => {
     const fetchClasses = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/classes');
-        setClasses(response.data.classes);
+        // Log the attempt to fetch classes for debugging
+        console.log('Attempting to fetch classes...');
+        
+        const response = await axios.get(`${API_URL}/api/classes`);
+        
+        // Log the response for debugging
+        console.log('Classes response:', response.data);
+        
+        if (response.data && response.data.classes) {
+          setClasses(response.data.classes);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          setMessage({ type: 'error', text: 'Failed to load classes (unexpected format)' });
+        }
       } catch (error) {
         console.error('Error fetching classes:', error);
+        setMessage({ type: 'error', text: 'Failed to load classes' });
       }
     };
 
@@ -44,15 +60,26 @@ const TakeAttendance: React.FC = () => {
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`http://localhost/api/students?class=${selectedClass}`);
-        setStudents(response.data.students);
-        
-        // Initialize all students as present
-        const initialAttendance: Record<string, 'present' | 'absent' | 'late'> = {};
-        response.data.students.forEach((student: Student) => {
-          initialAttendance[student.id] = 'present';
+        const response = await axios.get(`${API_URL}/api/students`, {
+          params: { class: selectedClass }
         });
-        setAttendance(initialAttendance);
+        
+        // Log the response for debugging
+        console.log('Students response:', response.data);
+        
+        if (response.data && response.data.students) {
+          setStudents(response.data.students);
+          
+          // Initialize all students as present
+          const initialAttendance: Record<string, 'present' | 'absent' | 'late'> = {};
+          response.data.students.forEach((student: Student) => {
+            initialAttendance[student.id] = 'present';
+          });
+          setAttendance(initialAttendance);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          setMessage({ type: 'error', text: 'Failed to fetch students (unexpected format)' });
+        }
       } catch (error) {
         console.error('Error fetching students:', error);
         setMessage({ type: 'error', text: 'Failed to fetch students' });
@@ -92,12 +119,13 @@ const TakeAttendance: React.FC = () => {
     
     setLoading(true);
     try {
-       await axios.post('http://localhost:5000/api/attendance', {
+      const response = await axios.post(`${API_URL}/api/attendance`, {
         date,
         class: selectedClass,
         records: attendanceRecords
       });
       
+      console.log('Attendance submission response:', response.data);
       setMessage({ type: 'success', text: 'Attendance submitted successfully!' });
     } catch (error) {
       console.error('Error submitting attendance:', error);

@@ -4,31 +4,51 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-
+// Load environment variables
 dotenv.config();
 
+// Initialize express app
 const app = express();
 const PORT = process.env.PORT || 5000;
- 
 
-//middleware
-app.use(cors());
+// Configure CORS to allow requests from your React frontend
+app.use(cors({
+  origin: 'http://localhost:3000', // Update this to match your frontend URL
+  credentials: true
+}));
+
+// Parse request bodies
 app.use(bodyParser.json());
 
-app.use('/',require('./routes/UserRoutes.js'));
+// Import routes
+const userRoutes = require('./routes/UserRoutes');
+const classRoutes = require('./routes/ClassRoutes');
+const studentRoutes = require('./routes/StudentRoutes');
+const attendanceRoutes = require('./routes/AttendanceRoutes');
 
+// Use routes
+app.use('/', userRoutes);
+app.use('/', classRoutes);
+app.use('/', studentRoutes);
+app.use('/', attendanceRoutes);
 
+// Add a health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
 
+// Connect to MongoDB
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/attendance_system';
 
-mongoose.connect(process.env.MONGO_URI,{useNewUrlParser : true, useUnifiedTopology: true})
-.then(()=> console.log('MongoDB Connected'))
-.catch((err)=> console.error(err));
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB Connected'))
+.catch((err) => console.error('MongoDB Connection Error:', err));
 
-
-
-
-
-app.listen(PORT,()=>{console.log(`Server is running on port ${PORT}` );});
-
-
-
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`API endpoints available at http://localhost:${PORT}/api/`);
+});

@@ -141,7 +141,8 @@ const ViewAttendance: React.FC<ViewAttendanceProps> = ({ userRole, userId, userE
     if (userRole === 'student' && userId) {
       fetchAttendanceRecords();
     }
-  }, [userRole, userId]);
+  }, [userRole, userId, fetchAttendanceRecords]);  // Add fetchAttendanceRecords here
+  
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

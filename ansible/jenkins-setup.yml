@@ -1,0 +1,156 @@
+- name: Configure Jenkins Pipeline Jobs
+  hosts: jenkins
+  become: yes
+  become_user: jenkins
+  vars:
+    git_repo_url: "https://github.com/safeer85/Student-attendace.git"
+  
+  tasks:
+    - name: Create Jenkins credentials for Docker Hub
+      jenkins_script:
+        script: |
+          import jenkins.model.*
+          import com.cloudbees.plugins.credentials.*
+          import com.cloudbees.plugins.credentials.domains.*
+          import com.cloudbees.plugins.credentials.impl.*
+          import hudson.util.Secret
+          
+          def instance = Jenkins.getInstance()
+          def domain = Domain.global()
+          def store = instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+          
+          def credentials = new UsernamePasswordCredentialsImpl(
+            CredentialsScope.GLOBAL,
+            'docker-hub-credentials',
+            'Docker Hub Credentials',
+            'safeer85',
+            'Ilove8543@12'
+          )
+          
+          store.addCredentials(domain, credentials)
+
+    - name: Create Jenkins credentials for SSH
+      jenkins_script:
+        script: |
+          import jenkins.model.*
+          import com.cloudbees.plugins.credentials.*
+          import com.cloudbees.plugins.credentials.domains.*
+          import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
+          import hudson.plugins.sshslaves.verifiers.*
+          
+          def instance = Jenkins.getInstance()
+          def domain = Domain.global()
+          def store = instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+          
+          def privateKey = '''{{ aws-ssh-private-key }}'''
+          
+          def credentials = new BasicSSHUserPrivateKey(
+            CredentialsScope.GLOBAL,
+            'aws-ssh-key',
+            'ec2-user',
+            new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(privateKey),
+            '',
+            'SSH key for AWS EC2 instances'
+          )
+          
+          store.addCredentials(domain, credentials)
+
+    - name: Create Frontend Pipeline Job
+      jenkins_job:
+        name: "frontend-pipeline"
+        config: |
+          <?xml version='1.1' encoding='UTF-8'?>
+          <flow-definition plugin="workflow-job@2.40">
+            <description>Pipeline for building and deploying the frontend application</description>
+            <keepDependencies>false</keepDependencies>
+            <properties>
+              <org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty/>
+              <hudson.model.ParametersDefinitionProperty>
+                <parameterDefinitions>
+                  <hudson.model.StringParameterDefinition>
+                    <name>FRONTEND_HOST</name>
+                    <description>Public IP of the frontend AWS instance</description>
+                    <defaultValue>{{ frontend_host }}</defaultValue>
+                    <trim>true</trim>
+                  </hudson.model.StringParameterDefinition>
+                </parameterDefinitions>
+              </hudson.model.ParametersDefinitionProperty>
+            </properties>
+            <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.90">
+              <scm class="hudson.plugins.git.GitSCM" plugin="git@4.7.1">
+                <configVersion>2</configVersion>
+                <userRemoteConfigs>
+                  <hudson.plugins.git.UserRemoteConfig>
+                    <url>{{ git_repo_url }}</url>
+                  </hudson.plugins.git.UserRemoteConfig>
+                </userRemoteConfigs>
+                <branches>
+                  <hudson.plugins.git.BranchSpec>
+                    <name>*/main</name>
+                  </hudson.plugins.git.BranchSpec>
+                </branches>
+                <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+                <submoduleCfg class="list"/>
+                <extensions/>
+              </scm>
+              <scriptPath>frontend-jenkinsfile</scriptPath>
+              <lightweight>true</lightweight>
+            </definition>
+            <triggers>
+              <hudson.triggers.SCMTrigger>
+                <spec>H/15 * * * *</spec>
+                <ignorePostCommitHooks>false</ignorePostCommitHooks>
+              </hudson.triggers.SCMTrigger>
+            </triggers>
+          </flow-definition>
+        url: http://localhost:8080
+
+    - name: Create Backend Pipeline Job
+      jenkins_job:
+        name: "backend-pipeline"
+        config: |
+          <?xml version='1.1' encoding='UTF-8'?>
+          <flow-definition plugin="workflow-job@2.40">
+            <description>Pipeline for building and deploying the backend application</description>
+            <keepDependencies>false</keepDependencies>
+            <properties>
+              <org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty/>
+              <hudson.model.ParametersDefinitionProperty>
+                <parameterDefinitions>
+                  <hudson.model.StringParameterDefinition>
+                    <name>BACKEND_HOST</name>
+                    <description>Public IP of the backend AWS instance</description>
+                    <defaultValue>{{ backend_host }}</defaultValue>
+                    <trim>true</trim>
+                  </hudson.model.StringParameterDefinition>
+                </parameterDefinitions>
+              </hudson.model.ParametersDefinitionProperty>
+            </properties>
+            <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.90">
+              <scm class="hudson.plugins.git.GitSCM" plugin="git@4.7.1">
+                <configVersion>2</configVersion>
+                <userRemoteConfigs>
+                  <hudson.plugins.git.UserRemoteConfig>
+                    <url>{{ git_repo_url }}</url>
+                  </hudson.plugins.git.UserRemoteConfig>
+                </userRemoteConfigs>
+                <branches>
+                  <hudson.plugins.git.BranchSpec>
+                    <name>*/main</name>
+                  </hudson.plugins.git.BranchSpec>
+                </branches>
+                <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+                <submoduleCfg class="list"/>
+                <extensions/>
+              </scm>
+              <scriptPath>backend-jenkinsfile</scriptPath>
+              <lightweight>true</lightweight>
+            </definition>
+            <triggers>
+              <hudson.triggers.SCMTrigger>
+                <spec>H/15 * * * *</spec>
+                <ignorePostCommitHooks>false</ignorePostCommitHooks>
+              </hudson.triggers.SCMTrigger>
+            </triggers>
+          </flow-definition>
+        url: http://localhost:8080

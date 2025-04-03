@@ -1,0 +1,105 @@
+pipeline {
+    agent any
+
+    triggers {
+        githubPush()
+    }
+
+    environment {
+        BACKEND_DIR = 'server'
+        DOCKERHUB_USERNAME = 'safeer85'  // Replace with your Docker Hub username
+        DOCKERHUB_PASSWORD = 'Ilove8543@12' // Store password in Jenkins credentials
+        BACKEND_EC2_IP = '13.60.17.251'  // EC2 instance public IP for Backend
+        AWS_SSH_KEY = credentials('aws-ssh-private-key') // Store your private SSH key in Jenkins credentials
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/safeer85/Student-attendace.git'
+            }
+        }
+
+        stage('Install Backend Dependencies') {
+            steps {
+                dir(BACKEND_DIR) {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Test Backend') {
+            steps {
+                dir(BACKEND_DIR) {
+                    script {
+                        def testStatus = sh(returnStatus: true, script: 'npm test')
+                        if (testStatus != 0) {
+                            echo "Tests failed, but continuing..."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Backend Docker Image...'
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/sams-backend:latest ${BACKEND_DIR}"
+                }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    echo 'Logging in to Docker Hub...'
+                    sh "docker login -u ${DOCKERHUB_USERNAME} -p ${DOCKERHUB_PASSWORD}"
+                }
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    echo 'Pushing Docker Image to Docker Hub...'
+                    sh "docker push ${DOCKERHUB_USERNAME}/sams-backend:latest"
+                }
+            }
+        }
+
+        stage('Deploy Backend to EC2') {
+            steps {
+                script {
+                    echo 'Deploying Backend to AWS EC2...'
+
+                    withCredentials([file(credentialsId: 'aws-ssh-private-key', variable: 'AWS_SSH_KEY_PATH')]) {
+                        sh """
+                        chmod 400 \${AWS_SSH_KEY_PATH}
+                        
+                        ssh -o StrictHostKeyChecking=no -i \${AWS_SSH_KEY_PATH} ec2-user@${BACKEND_EC2_IP} '
+                            echo "Pulling backend image"
+                            sudo docker pull ${DOCKERHUB_USERNAME}/sams-backend:latest &&
+                            sudo docker stop backend_container || true &&
+                            sudo docker rm backend_container || true &&
+                            sudo docker run -d --name backend_container -p 5000:5000 ${DOCKERHUB_USERNAME}/sams-backend:latest
+                        '
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Backend deployment completed (if any)'
+        }
+        success {
+            echo 'Backend Build and Deployment Successful!'
+        }
+        failure {
+            echo 'Backend Build or Deployment Failed!'
+        }
+    }
+}

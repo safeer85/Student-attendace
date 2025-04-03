@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-// Fix capitalization and add the .tsx extension
 import './home.css'; // Create this CSS file for styling
 import Navbar from '../../Components/navbar.tsx';
 import TakeAttendance from '../../Components/TakeAttendance.tsx';
@@ -87,9 +86,6 @@ const HomePage: React.FC = () => {
               Generate Reports
             </button>
 
-            {activeComponent === 'viewAttendance' && (
-              <ViewAttendance userRole="admin" />
-            )}
             {activeComponent === 'generateReport' && (
               <GenerateReport />
             )}

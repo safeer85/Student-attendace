@@ -51,7 +51,7 @@ const ViewAttendance: React.FC<ViewAttendanceProps> = ({ userRole, userId, userE
 
     const fetchClasses = async () => {
       try {
-        const response = await axios.get('http://13.61.3.43:5000/api/classes');
+        const response = await axios.get('http://localhost:5000/api/classes');
         setClasses(response.data.classes);
       } catch (error) {
         console.error('Error fetching classes:', error);
@@ -69,7 +69,7 @@ const ViewAttendance: React.FC<ViewAttendanceProps> = ({ userRole, userId, userE
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`http://13.61.3.43:5000/api/students?class=${selectedClass}`);
+        const response = await axios.get(`http://localhost:5000/api/students?class=${selectedClass}`);
         setStudents(response.data.students.map((s: any) => ({ 
           id: s.id, 
           name: s.nameWithInitial 
@@ -92,7 +92,7 @@ const ViewAttendance: React.FC<ViewAttendanceProps> = ({ userRole, userId, userE
     setError('');
     
     try {
-      let url = 'http://13.61.3.43:5000/api/attendance';
+      let url = 'http://localhost:5000/api/attendance';
       const params: Record<string, string> = {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate

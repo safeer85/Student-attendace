@@ -1,70 +1,106 @@
 pipeline {
     agent any
-    
-    environment {
-        DOCKER_HUB_CREDS = credentials('docker-hub-credentials')
-        FRONTEND_IMAGE = "${DOCKER_HUB_CREDS_USR}/frontend:${env.BUILD_NUMBER}"
-        FRONTEND_IMAGE_LATEST = "${DOCKER_HUB_CREDS_USR}/frontend:latest"
+
+    triggers {
+        githubPush()
     }
-    
+
+    environment {
+        FRONTEND_DIR = 'client'
+        DOCKERHUB_USERNAME = 'safeer85'  // Replace with your Docker Hub username
+        DOCKERHUB_PASSWORD = 'Ilove8543@12' // Store password in Jenkins credentials
+        FRONTEND_EC2_IP = '13.48.44.167'  // EC2 instance public IP for Frontend
+        AWS_SSH_KEY = credentials('aws-ssh-private-key') // Store your private SSH key in Jenkins credentials
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/safeer85/Student-attendace.git'
             }
         }
-        
+
+        stage('Install Frontend Dependencies') {
+            steps {
+                dir(FRONTEND_DIR) {
+                    sh 'npm install'
+                }
+            }
+        }
+
         stage('Build Frontend') {
             steps {
-                dir('client') {
-                    sh 'npm install'
+                dir(FRONTEND_DIR) {
                     sh 'npm run build'
                 }
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
-                dir('client') {
-                    sh "docker build -t ${FRONTEND_IMAGE} -t ${FRONTEND_IMAGE_LATEST} ."
+                script {
+                    echo 'Building Frontend Docker Image...'
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/sams-frontend:latest ${FRONTEND_DIR}"
                 }
             }
         }
-        
-        stage('Push to Docker Hub') {
+
+        stage('Login to Docker Hub') {
             steps {
-                sh "echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin"
-                sh "docker push ${FRONTEND_IMAGE}"
-                sh "docker push ${FRONTEND_IMAGE_LATEST}"
+                script {
+                    echo 'Logging in to Docker Hub...'
+                    sh "docker login -u ${DOCKERHUB_USERNAME} -p ${DOCKERHUB_PASSWORD}"
+                }
             }
         }
-        
-        stage('Deploy to AWS') {
+
+        stage('Push Docker Image to Docker Hub') {
             steps {
-                sshagent(['aws-ssh-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ec2-user@\${FRONTEND_HOST} '
-                        docker pull ${FRONTEND_IMAGE_LATEST} &&
-                        docker stop frontend || true &&
-                        docker rm frontend || true &&
-                        docker run -d --name frontend -p 3000:3000 ${FRONTEND_IMAGE_LATEST}
+                script {
+                    echo 'Pushing Docker Image to Docker Hub...'
+                    sh "docker push ${DOCKERHUB_USERNAME}/sams-frontend:latest"
+                }
+            }
+        }
+
+        stage('Deploy Frontend to EC2') {
+            steps {
+                script {
+                    echo 'Deploying Frontend to AWS EC2...'
+
+                    withCredentials([file(credentialsId: 'aws-ssh-private-key', variable: 'AWS_SSH_KEY_PATH')]) {
+                        sh """
+                        chmod 400 \${AWS_SSH_KEY_PATH}
+                        
+                        ssh -o StrictHostKeyChecking=no -i \${AWS_SSH_KEY_PATH} ec2-user@${FRONTEND_EC2_IP} '
+                            echo "Pulling frontend image"
+                            sudo docker pull ${DOCKERHUB_USERNAME}/sams-frontend:latest &&
+                            sudo docker stop frontend_container || true &&
+                            sudo docker rm frontend_container || true &&
+                            sudo docker run -d --name frontend_container -p 3000:3000 ${DOCKERHUB_USERNAME}/sams-frontend:latest
                         '
-                    """
+                        """
+                    }
                 }
             }
         }
     }
-    
+
     post {
         always {
-            sh 'docker logout'
-            cleanWs()
+            node {
+                echo 'Frontend deployment completed (if any)'
+            }
         }
         success {
-            echo 'Frontend deployment successful!'
+            node {
+                echo 'Frontend Build and Deployment Successful!'
+            }
         }
         failure {
-            echo 'Frontend deployment failed!'
+            node {
+                echo 'Frontend Build or Deployment Failed!'
+            }
         }
     }
 }

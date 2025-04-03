@@ -12,10 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Configure CORS to allow requests from your React frontend
-app.use(cors({
-  origin: 'http://localhost:3000', // Update this to match your frontend URL
-  credentials: true
-}));
+app.use(cors());
 
 // Parse request bodies
 app.use(bodyParser.json());

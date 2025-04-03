@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllStudents } = require('../controllers/Studentcontroller');
+const { getAllStudents } = require('../controllers/StudentController');
 
 // Get all students with optional class filter
 // This is the endpoint needed for loading students in the dropdown

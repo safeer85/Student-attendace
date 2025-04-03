@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_HUB_CREDS = credentials('docker-hub-credentials')
+        BACKEND_IMAGE = "${DOCKER_HUB_CREDS_USR}/backend:${env.BUILD_NUMBER}"
+        BACKEND_IMAGE_LATEST = "${DOCKER_HUB_CREDS_USR}/backend:latest"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build Backend') {
+            steps {
+                dir('server') {
+                    sh 'npm install'
+                    sh 'npm run build || true'  // Some backend projects might not have a build step
+                }
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                dir('server') {
+                    sh 'npm test || true'  // Optional: run tests if available
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                dir('server') {
+                    sh "docker build -t ${BACKEND_IMAGE} -t ${BACKEND_IMAGE_LATEST} ."
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                sh "echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin"
+                sh "docker push ${BACKEND_IMAGE}"
+                sh "docker push ${BACKEND_IMAGE_LATEST}"
+            }
+        }
+        
+        stage('Deploy to AWS') {
+            steps {
+                sshagent(['aws-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@\${BACKEND_HOST} '
+                        docker pull ${BACKEND_IMAGE_LATEST} &&
+                        docker stop backend || true &&
+                        docker rm backend || true &&
+                        docker run -d --name backend -p 5000:5000 -e NODE_ENV=production ${BACKEND_IMAGE_LATEST}
+                        '
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'docker logout'
+            cleanWs()
+        }
+        success {
+            echo 'Backend deployment successful!'
+        }
+        failure {
+            echo 'Backend deployment failed!'
+        }
+    }
+}

@@ -1,0 +1,116 @@
+---
+- name: Install Docker on all servers
+  hosts: all
+  become: yes
+  tasks:
+    # Amazon Linux 2 specific tasks
+    - name: Install Docker on Amazon Linux 2
+      block:
+        - name: Update yum packages
+          yum:
+            name: '*'
+            state: latest
+            update_only: yes
+
+        - name: Install Docker on Amazon Linux 2
+          yum:
+            name: docker
+            state: present
+
+        - name: Start and enable Docker service
+          service:
+            name: docker
+            state: started
+            enabled: yes
+      when: ansible_distribution == "Amazon" and ansible_distribution_major_version == "2"
+
+    # Amazon Linux 2023 specific tasks
+    - name: Install Docker on Amazon Linux 2023
+      block:
+        - name: Update dnf packages
+          dnf:
+            name: '*'
+            state: latest
+            update_only: yes
+
+        - name: Install Docker on Amazon Linux 2023
+          dnf:
+            name: docker
+            state: present
+
+        - name: Start and enable Docker service
+          service:
+            name: docker
+            state: started
+            enabled: yes
+      when: ansible_distribution == "Amazon" and ansible_distribution_major_version == "2023"
+
+    # Ubuntu specific tasks
+    - name: Install Docker on Ubuntu
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+
+        - name: Install required packages
+          apt:
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - gnupg
+              - lsb-release
+            state: present
+
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker apt repository
+          apt_repository:
+            repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+
+        - name: Install Docker CE
+          apt:
+            name: docker-ce
+            state: present
+
+        - name: Start and enable Docker service
+          service:
+            name: docker
+            state: started
+            enabled: yes
+      when: ansible_distribution == "Ubuntu"
+
+    # Common tasks for all distributions
+    - name: Add ec2-user to docker group (Amazon Linux)
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+      when: ansible_distribution == "Amazon"
+
+    - name: Add ubuntu user to docker group (Ubuntu)
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+      when: ansible_distribution == "Ubuntu"
+
+    # Install Docker Compose (v2) using the plugin approach - works on most distributions
+    - name: Create Docker CLI plugins directory
+      file:
+        path: /usr/local/lib/docker/cli-plugins
+        state: directory
+        mode: '0755'
+
+    - name: Download Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+        dest: /usr/local/lib/docker/cli-plugins/docker-compose
+        mode: '0755'
+
+    - name: Reset ssh connection to allow user changes to affect current user
+      meta: reset_connection

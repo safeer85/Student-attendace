@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_HUB_CREDS = credentials('docker-hub-credentials')
+        FRONTEND_IMAGE = "${DOCKER_HUB_CREDS_USR}/frontend:${env.BUILD_NUMBER}"
+        FRONTEND_IMAGE_LATEST = "${DOCKER_HUB_CREDS_USR}/frontend:latest"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build Frontend') {
+            steps {
+                dir('client') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                dir('client') {
+                    sh "docker build -t ${FRONTEND_IMAGE} -t ${FRONTEND_IMAGE_LATEST} ."
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                sh "echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin"
+                sh "docker push ${FRONTEND_IMAGE}"
+                sh "docker push ${FRONTEND_IMAGE_LATEST}"
+            }
+        }
+        
+        stage('Deploy to AWS') {
+            steps {
+                sshagent(['aws-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@\${FRONTEND_HOST} '
+                        docker pull ${FRONTEND_IMAGE_LATEST} &&
+                        docker stop frontend || true &&
+                        docker rm frontend || true &&
+                        docker run -d --name frontend -p 3000:3000 ${FRONTEND_IMAGE_LATEST}
+                        '
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'docker logout'
+            cleanWs()
+        }
+        success {
+            echo 'Frontend deployment successful!'
+        }
+        failure {
+            echo 'Frontend deployment failed!'
+        }
+    }
+}

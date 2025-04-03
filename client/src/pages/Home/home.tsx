@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import './home.css'; // Create this CSS file for styling
 import Navbar from '../../Components/navbar.tsx';
 import TakeAttendance from '../../Components/TakeAttendance.tsx';
-import ViewAttendance from '../../Components/ViewAttendance.tsx'; 
+
 import GenerateReport from '../../Components/GenerateReport.tsx';
 
 const HomePage: React.FC = () => {
@@ -41,9 +41,7 @@ const HomePage: React.FC = () => {
             </button>
 
             {/* Conditional Rendering */}
-            {activeComponent === 'viewAttendance' && (
-              <ViewAttendance userRole="teacher" />
-            )}
+            
             {activeComponent === 'takeAttendance' && (
               <TakeAttendance />
             )}
@@ -59,9 +57,7 @@ const HomePage: React.FC = () => {
               View Your Attendance Details
             </button>
 
-            {activeComponent === 'viewAttendance' && (
-              <ViewAttendance userRole="student" userId={user.id} userEmail={user.email} />
-            )}
+            
           </div>
         )}
 
@@ -71,9 +67,7 @@ const HomePage: React.FC = () => {
               View Child's Attendance Details
             </button>
 
-            {activeComponent === 'viewAttendance' && (
-              <ViewAttendance userRole="parent" userId={user.childId} userEmail={user.childEmail} />
-            )}
+           
           </div>
         )}
 

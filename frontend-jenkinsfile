@@ -7,10 +7,10 @@ pipeline {
 
     environment {
         FRONTEND_DIR = 'client'
-        DOCKERHUB_USERNAME = 'safeer85'  // Replace with your Docker Hub username
-        DOCKERHUB_PASSWORD = 'Ilove8543@12' // Store password in Jenkins credentials
-        FRONTEND_EC2_IP = '13.48.44.167'  // EC2 instance public IP for Frontend
-        AWS_SSH_KEY = credentials('aws-ssh-private-key') // Store your private SSH key in Jenkins credentials
+        DOCKERHUB_USERNAME = 'safeer85'  
+        DOCKERHUB_PASSWORD = 'Ilove8543@12' 
+        FRONTEND_EC2_IP = '13.48.44.167'  
+        AWS_SSH_KEY = credentials('aws-ssh-private-key') 
     }
 
     stages {
